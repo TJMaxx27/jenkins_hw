@@ -26,7 +26,7 @@ def allure_attach_screenshot_on_failed(func):
 
 def pytest_addoption(parser):
     parser.addoption("--browser", action="store", default="chrome")
-    parser.addoption("--executor", action="store", default="172.17.0.2")
+    parser.addoption("--executor", action="store", default="local")
     parser.addoption("--vnc", action="store_true")
     parser.addoption("--logs", action="store_true")
     parser.addoption("--video", action="store_true")
@@ -41,42 +41,47 @@ def browser(request):
     logs = request.config.getoption("--logs")
     video = request.config.getoption("--video")
 
-    executor_url = f'http://{executor}:4444/wd/hub'
     options = None
-
-    if browser == "chrome":
-        options = ChromeOptions()
-        service = ChromeService(ChromeDriverManager().install())
-        driver = webdriver.Chrome(service=service, options=options)
-    elif browser == "firefox":
-        options = FireFoxOptions()
-        service = FirefoxService(GeckoDriverManager().install())
-        driver = webdriver.Firefox(service=service, options=options)
-
-    capabilities = {
-        'browserName': browser,
-        'browserVersion': version if version != "latest" else "",
-        "selenoid:options": {
-            "enableVNC": vnc,
-            "name": request.node.name,
-            "screenResolution": "1920x1080x24",
-            "enableVideo": video,
-            "enableLog": logs
-        }
-    }
-
-    for k, v in capabilities.items():
-        if v:
-            options.set_capability(k, v)
-
     driver = None
-    try:
+
+    if executor == "local":
+        if browser == "chrome":
+            options = ChromeOptions()
+            service = ChromeService(ChromeDriverManager().install())
+            driver = webdriver.Chrome(service=service, options=options)
+        elif browser == "firefox":
+            options = FireFoxOptions()
+            service = FirefoxService(GeckoDriverManager().install())
+            driver = webdriver.Firefox(service=service, options=options)
+    else:
+        executor_url = f'http://{executor}:4444/wd/hub'
+        if browser == "chrome":
+            options = ChromeOptions()
+        elif browser == "firefox":
+            options = FireFoxOptions()
+
+        capabilities = {
+            'browserName': browser,
+            'browserVersion': version if version != "latest" else "",
+            "selenoid:options": {
+                "enableVNC": vnc,
+                "name": request.node.name,
+                "screenResolution": "1920x1080x24",
+                "enableVideo": video,
+                "enableLog": logs
+            }
+        }
+
+        for k, v in capabilities.items():
+            if v:
+                options.set_capability(k, v)
+
         driver = webdriver.Remote(
             command_executor=executor_url,
             options=options
         )
-        driver.maximize_window()
-        yield driver
-    finally:
-        if driver is not None:
-            driver.quit()
+
+    driver.maximize_window()
+    yield driver
+    if driver is not None:
+        driver.quit()
