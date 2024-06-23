@@ -10,6 +10,7 @@ import allure
 
 
 @allure.feature("Главная страница")
+@allure.story("Проверка отображения элементов на главной странице")
 def test_home_page(browser):
     home_page = HomePage(browser)
     home_page.load()
@@ -25,6 +26,7 @@ def test_home_page(browser):
 
 
 @allure.feature("Страница каталога ноутбуков")
+@allure.story("Проверка элементов каталога ноутбуков")
 def test_catalog_laptop_notebooks(browser):
     catalog_page = CatalogLaptopsPage(browser)
     catalog_page.load()
@@ -36,6 +38,7 @@ def test_catalog_laptop_notebooks(browser):
 
 
 @allure.feature("Страница информации о продукте HP LP3065")
+@allure.story("Проверка элементов продукта")
 def test_product_info_hp_lp3065(browser):
     product_info_page = ProductInfoPage(browser)
     product_info_page.load()
